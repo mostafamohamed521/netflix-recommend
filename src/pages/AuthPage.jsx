@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import LoginForm from '../components/LoginForm';
 import RegisterForm from '../components/RegisterForm';
 import AuthBackground from '../components/AuthBackground';
@@ -8,9 +8,10 @@ import './AuthPage.css';
 
 export default function AuthPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, register } = useAuth();
 
-  const [mode, setMode] = useState('login');
+  const [mode, setMode] = useState(location.state?.mode === 'register' ? 'register' : 'login');
   const [curtainActive, setCurtainActive] = useState(false);
   const [introPlaying, setIntroPlaying] = useState(true);
   const [hasSwitchedOnce, setHasSwitchedOnce] = useState(false);
@@ -32,12 +33,14 @@ export default function AuthPage() {
 
   async function handleLogin(payload) {
     const user = await login(payload);
-    navigate('/home', { state: { justAuthenticated: true, name: user.email } });
+    await new Promise(resolve => setTimeout(resolve, 550));
+    navigate('/welcome-back', { state: { name: user.email } });
   }
 
   async function handleRegister(payload) {
     const user = await register(payload);
-    navigate('/home', { state: { justAuthenticated: true, name: user.email } });
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    navigate('/welcome-back', { state: { name: user.email } });
   }
 
   return (

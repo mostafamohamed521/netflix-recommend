@@ -47,6 +47,91 @@ Without a key, every poster gracefully falls back to genre-themed
 placeholder photography (`src/api/tmdb.js` → `fallbackPoster()`), so the
 app still looks right before you add one.
 
+## New: AI-interactive Home hero (proof of concept)
+
+`src/components/AiHero.jsx` replaces the old static hero with the
+`react-three-fiber` / Framer Motion concept discussed: a mouse-reactive
+3D particle sphere (red/purple/cyan blend, one draw call), a typed
+"What do you want to watch today?" headline, and a glassmorphic search
+panel with a scan-line sweep on focus and autocomplete results that fly
+in (opacity + scale + rotateX + blur) via Framer Motion.
+
+On a fresh login, the hero plays a short intro first: black screen →
+logo emerges from blur → brief glitch → camera zooms out to reveal the
+sphere and search. Clicking "Home" again later skips straight to the
+final state (`skipIntro` prop) so it doesn't replay every visit.
+
+**Be aware of the cost**: Three.js pulls in ~900KB (gzipped ~256KB) on
+its own. It's lazy-loaded (`React.lazy` + `Suspense` in `HomePage.jsx`)
+so it doesn't block the rest of the app, and fetches only when someone
+reaches Home — but it's still meaningfully heavier than the rest of the
+app combined. Test on the actual hardware you'll present on before
+committing further effort to Three.js elsewhere (Similar Movies
+carousel, dynamic poster-color extraction, etc. from the fuller brief);
+if it stutters, dial back the particle count in `ParticleSphere.jsx`
+(`COUNT` constant) or drop Three.js for a 2D canvas approximation.
+
+## New: Splash Screen + Authentication Gate
+
+Two new pages ahead of Sign In, matching the full-experience brief:
+
+- **`SplashScreen.jsx`** (`/`) — black screen → quick red flash → cinema-reel
+  mark scales in from fog → "WELCOME TO" types in letter by letter →
+  "CINEMATCH" rises letter by letter with a brief glow → tagline fades up →
+  a 0→100% loading bar (with a small logo pulse on each tick) → fade to
+  black → auto-continues to `/welcome`. Runs once per page load, ~3.5s.
+- **`AuthGatePage.jsx`** (`/welcome`) — a blurred, desaturated collage of
+  cinema-themed placeholder photography behind an 85% black overlay. The
+  headline types out letter by letter, then a red underline draws under
+  it, followed by the description and the two actions (Sign In / Create
+  Account) staggering in. Only plays that entrance once per browser
+  session (`sessionStorage`) — coming back later shows it instantly.
+  Both buttons hand off to `/signin` with the right tab pre-selected via
+  `location.state.mode`.
+
+## Roadmap — the rest of the brief
+
+Since the note above, **Welcome Back** is now built too (`WelcomeBackPage.jsx`,
+`/welcome-back`): the logo docks up top, "WELCOME BACK" + your name in
+red, a terminal-style status line cycling through Initializing → Loading
+→ Analyzing → Preparing → Ready, a progress bar, then Continue into
+Discover. Login/Register also got the backdrop poster, OR + social
+buttons, and success-checkmark treatment the brief describes.
+
+**One real conflict worth knowing about:** the brief adds a `Username`
+field to Register with live availability checking. Your API Contract
+(BR11) explicitly says registration is email + password only — so
+Register here still sends just those two fields. Adding a username means
+updating the Laravel contract first; happy to wire the frontend field in
+once that's confirmed so it doesn't silently break against the real
+backend.
+
+Still queued, at this same level of detail: **Recommend / AI Assistant**
+(the standout differentiator in the brief — worth doing properly rather
+than rushed), **Trending**, a reworked **My List** (shelf animation +
+dynamic ambient lighting), a cinematic **Movie Details** page with
+dynamic poster-color theming, and a **Dashboard/Profile** with a
+"Cinema DNA" chart. Say which one to tackle next.
+
+No emoji anywhere in any of this — every icon is an inline SVG.
+
+## Latest adjustments
+
+- **Discover hero now matches the reference screenshot**: "Find Your Next
+  Obsession." types itself out with "Obsession." in red, the underline
+  draws, then "8,790 titles. One search. Infinite recommendations."
+  types out beneath it, then the wide search bar fades in.
+- **Dimmed poster-grid backdrop** behind the whole Discover page
+  (`components/DiscoverBackdrop.jsx`) — a faint, grayscale tile grid with
+  a dark overlay on top, same idea as the screenshot. It uses CineMatch's
+  own catalog titles rather than the real show names in the reference
+  image, to keep the effect without borrowing anyone's actual IP.
+- Header restructured into 3 zones: cinema-reel icon + CINEMATCH on the
+  left, nav centered (Discover, Recommend, Trending, My List), search +
+  avatar on the right (`components/Header.jsx`).
+- Auth pages backdrop reverted to the simple no-photography version.
+- Added minimal placeholder pages for `/recommend` and `/trending`.
+
 ## What's new in this pass
 
 - **All auth pages, not just login/register**: Forgot Password
@@ -130,10 +215,12 @@ src/
 
 | Path | Page | Auth |
 |---|---|---|
-| `/` | Sign in / Create account | Public |
+| `/` | Splash screen (plays once, then auto-continues) | Public |
+| `/welcome` | Authentication Gate (poster collage, Sign In / Create Account) | Public |
+| `/signin` | Sign in / Create account | Public |
 | `/forgot-password` | Forgot password | Public |
 | `/reset-password?token=` | Set new password | Public |
-| `/home` | Personalized home (4 stages) + hero search | Protected |
+| `/home` | Personalized home (4 stages) + AI hero search | Protected |
 | `/search?q=` | Search results | Protected |
 | `/title/:title` | Detail + recommendations + favorite/watched | Protected |
 | `/favorites` | My List | Protected |

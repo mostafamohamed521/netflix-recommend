@@ -14,6 +14,7 @@ export default function RegisterForm({ onSubmit, onSwitchToLogin, entrance }) {
   const [fieldErrors, setFieldErrors] = useState({});
   const [formError, setFormError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
   const [shake, setShake] = useState(false);
 
   function triggerShake() {
@@ -38,6 +39,7 @@ export default function RegisterForm({ onSubmit, onSwitchToLogin, entrance }) {
     setFormError('');
     try {
       await onSubmit({ email, password, password_confirmation: confirm });
+      setSuccess(true);
     } catch (err) {
       const apiMessage = err?.errors ? Object.values(err.errors)[0]?.[0] : err?.message;
       setFormError(apiMessage || "We couldn't create your account. Please try again.");
@@ -45,6 +47,22 @@ export default function RegisterForm({ onSubmit, onSwitchToLogin, entrance }) {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (success) {
+    return (
+      <div className={`nf-card ${entrance ? 'nf-card--entrance' : ''} nf-card--success`}>
+        <div className="nf-success">
+          <div className="nf-success__ring">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M20 6 9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <h1 className="nf-success__title">Account Created Successfully</h1>
+          <p className="nf-success__subtitle">Welcome to CINEMATCH.</p>
+        </div>
+      </div>
+    );
   }
 
   return (

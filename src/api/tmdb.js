@@ -11,6 +11,7 @@ const TMDB_KEY = import.meta.env.VITE_TMDB_API_KEY;
 const IMG_BASE = 'https://image.tmdb.org/t/p/w500';
 
 const cache = new Map();
+const backdropCache = new Map();
 
 export async function posterFor(title, year, type) {
   if (!TMDB_KEY) return null;
@@ -39,6 +40,35 @@ export async function posterFor(title, year, type) {
 }
 
 export const TMDB_ENABLED = Boolean(TMDB_KEY);
+
+const BACKDROP_BASE = 'https://image.tmdb.org/t/p/w1280';
+
+/** Wide backdrop image for hero banners (falls back to a themed poster shot). */
+export async function backdropFor(title, year, type) {
+  if (!TMDB_KEY) return null;
+
+  const cacheKey = `${title}__${year}__${type}`;
+  if (backdropCache.has(cacheKey)) return backdropCache.get(cacheKey);
+
+  const searchType = type === 'Movie' ? 'movie' : 'tv';
+  const url = new URL(`https://api.themoviedb.org/3/search/${searchType}`);
+  url.searchParams.set('api_key', TMDB_KEY);
+  url.searchParams.set('query', title);
+  if (year) url.searchParams.set(searchType === 'movie' ? 'year' : 'first_air_date_year', year);
+
+  try {
+    const res = await fetch(url.toString());
+    if (!res.ok) throw new Error('TMDB request failed');
+    const data = await res.json();
+    const match = data.results?.find(r => r.backdrop_path) || null;
+    const backdropUrl = match ? `${BACKDROP_BASE}${match.backdrop_path}` : null;
+    backdropCache.set(cacheKey, backdropUrl);
+    return backdropUrl;
+  } catch {
+    backdropCache.set(cacheKey, null);
+    return null;
+  }
+}
 
 const GENRE_KEYWORDS = {
   'Sci-Fi': 'space,futuristic',

@@ -5,9 +5,10 @@ import * as titlesApi from '../api/titles';
 import '../pages/BrowsePages.css';
 
 const NAV_LINKS = [
-  { to: '/home', label: 'Home' },
+  { to: '/home', label: 'Discover' },
+  { to: '/recommend', label: 'Recommend' },
+  { to: '/trending', label: 'Trending' },
   { to: '/favorites', label: 'My List' },
-  { to: '/history', label: 'History' },
 ];
 
 export default function Header() {
@@ -34,8 +35,6 @@ export default function Header() {
     return () => document.removeEventListener('mousedown', onOutside);
   }, []);
 
-  // Global "/" shortcut opens the command-palette search, like every
-  // serious app (Linear, Notion, GitHub...) — skipped while typing elsewhere.
   useEffect(() => {
     function onKeyDown(e) {
       const isTyping = ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName);
@@ -55,8 +54,14 @@ export default function Header() {
     <>
       <header className={`hdr ${scrolled ? 'hdr--scrolled' : ''}`}>
         <div className="hdr__inner">
-        <div className="hdr__left">
-          <NavLink to="/home" className="hdr__logo">CINEMATCH</NavLink>
+          <NavLink to="/home" className="hdr__brand">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="hdr__brand-icon">
+              <rect x="3" y="4" width="18" height="16" rx="2" />
+              <path d="M3 9h18M8 4v5M16 4v5" strokeLinecap="round" />
+            </svg>
+            <span className="hdr__logo">CINEMATCH</span>
+          </NavLink>
+
           <nav className="hdr__nav">
             {NAV_LINKS.map(link => (
               <NavLink
@@ -68,42 +73,40 @@ export default function Header() {
               </NavLink>
             ))}
           </nav>
-        </div>
 
-        <div className="hdr__right">
-          <button type="button" className="hdr__search-trigger" onClick={() => setPaletteOpen(true)}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="7" /><path d="m21 21-4.35-4.35" strokeLinecap="round" />
-            </svg>
-            <span className="hdr__search-trigger-text">Search titles</span>
-            <span className="hdr__kbd">/</span>
-          </button>
+          <div className="hdr__right">
+            <button type="button" className="hdr__search-trigger" onClick={() => setPaletteOpen(true)}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="7" /><path d="m21 21-4.35-4.35" strokeLinecap="round" />
+              </svg>
+              <span className="hdr__kbd">/</span>
+            </button>
 
-          <div className="hdr__profile" ref={profileRef}>
-            <button type="button" className="hdr__avatar" onClick={() => setMenuOpen(m => !m)}>{initial}</button>
-            <div className={`hdr__profile-menu ${menuOpen ? 'hdr__profile-menu--open' : ''}`}>
-              <p className="hdr__profile-email">{user?.email}</p>
+            <div className="hdr__profile" ref={profileRef}>
+              <button type="button" className="hdr__avatar" onClick={() => setMenuOpen(m => !m)}>{initial}</button>
+              <div className={`hdr__profile-menu ${menuOpen ? 'hdr__profile-menu--open' : ''}`}>
+                <p className="hdr__profile-email">{user?.email}</p>
 
-              <button type="button" className="hdr__menu-item" onClick={() => { setMenuOpen(false); navigate('/favorites'); }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14" strokeLinecap="round" /></svg>
-                My List
-              </button>
-              <button type="button" className="hdr__menu-item" onClick={() => { setMenuOpen(false); navigate('/history'); }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                History
-              </button>
-              <div className="hdr__menu-divider" />
-              <button type="button" className="hdr__menu-item hdr__menu-item--danger" onClick={() => { logout(); navigate('/'); }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                Sign out
-              </button>
+                <button type="button" className="hdr__menu-item" onClick={() => { setMenuOpen(false); navigate('/favorites'); }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14" strokeLinecap="round" /></svg>
+                  My List
+                </button>
+                <button type="button" className="hdr__menu-item" onClick={() => { setMenuOpen(false); navigate('/history'); }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  History
+                </button>
+                <div className="hdr__menu-divider" />
+                <button type="button" className="hdr__menu-item hdr__menu-item--danger" onClick={() => { logout(); navigate('/welcome'); }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  Sign out
+                </button>
+              </div>
             </div>
-          </div>
 
-          <button type="button" className="hdr__hamburger" onClick={() => setMobileOpen(o => !o)} aria-label="Menu">
-            <span /><span /><span />
-          </button>
-        </div>
+            <button type="button" className="hdr__hamburger" onClick={() => setMobileOpen(o => !o)} aria-label="Menu">
+              <span /><span /><span />
+            </button>
+          </div>
         </div>
       </header>
 

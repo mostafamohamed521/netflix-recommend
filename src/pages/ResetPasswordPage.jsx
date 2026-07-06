@@ -32,7 +32,7 @@ export default function ResetPasswordPage() {
     try {
       await authApi.resetPassword({ token, password, password_confirmation: confirm });
       setDone(true);
-      setTimeout(() => navigate('/'), 2200);
+      setTimeout(() => navigate('/signin'), 2200);
     } catch (err) {
       setError(err?.message || 'That reset link may have expired. Please request a new one.');
     } finally {
@@ -45,7 +45,7 @@ export default function ResetPasswordPage() {
       <AuthBackground />
 
       <header className="nf-header">
-        <Link to="/" className="nf-logo__text" style={{ textDecoration: 'none' }}>CINEMATCH</Link>
+        <Link to="/welcome" className="nf-logo__text" style={{ textDecoration: 'none' }}>CINEMATCH</Link>
       </header>
 
       <main className="nf-main">

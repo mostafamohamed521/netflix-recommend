@@ -34,7 +34,7 @@ export default function ForgotPasswordPage() {
       <AuthBackground />
 
       <header className="nf-header">
-        <Link to="/" className="nf-logo__text" style={{ textDecoration: 'none' }}>CINEMATCH</Link>
+        <Link to="/welcome" className="nf-logo__text" style={{ textDecoration: 'none' }}>CINEMATCH</Link>
       </header>
 
       <main className="nf-main">
@@ -81,7 +81,7 @@ export default function ForgotPasswordPage() {
           )}
 
           <p className="nf-signup-line">
-            <Link to="/" className="nf-link">&larr; Back to Sign In</Link>
+            <Link to="/signin" className="nf-link">&larr; Back to Sign In</Link>
           </p>
         </div>
       </main>
