@@ -3,7 +3,6 @@ import Header from '../components/Header';
 import TitleCard from '../components/TitleCard';
 import TypewriterHeadline from '../components/TypewriterHeadline';
 import DiscoverSearch from '../components/DiscoverSearch';
-import DiscoverBackdrop from '../components/DiscoverBackdrop';
 import { useAuth } from '../context/AuthContext';
 import * as homeApi from '../api/home';
 import './HomePage.css';
@@ -60,7 +59,6 @@ export default function HomePage() {
 
   return (
     <div className="hp">
-      <DiscoverBackdrop />
       <Header />
 
       <section className="discover-hero">
