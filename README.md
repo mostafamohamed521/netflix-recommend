@@ -132,6 +132,18 @@ No emoji anywhere in any of this — every icon is an inline SVG.
 - Auth pages backdrop reverted to the simple no-photography version.
 - Added minimal placeholder pages for `/recommend` and `/trending`.
 
+## Latest adjustments (2)
+
+- **No images anywhere in the app.** TMDB posters/backdrops are gone
+  entirely — `TitleCard`, `TitleDetailPage`, and the Auth Gate's poster
+  collage all now use pure color gradients derived from genre
+  (`utils/palette.js`) instead of photos. `api/tmdb.js` is no longer
+  called by anything live (only the still-unused `AiHero`/
+  `GlassSearchPanel` proof-of-concept from earlier references it — those
+  aren't rendered anywhere right now).
+- **Discover hero is now full-screen** (`min-height: 100vh`), black
+  background with a red radial gradient, content vertically centered.
+
 ## What's new in this pass
 
 - **All auth pages, not just login/register**: Forgot Password
