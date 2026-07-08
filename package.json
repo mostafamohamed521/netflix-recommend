@@ -19,7 +19,6 @@
     "three": "^0.160.1"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.3.2",
     "@vitejs/plugin-react": "^4.3.1",
     "vite": "^5.4.0"
   }
