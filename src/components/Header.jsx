@@ -87,6 +87,10 @@ export default function Header() {
               <div className={`hdr__profile-menu ${menuOpen ? 'hdr__profile-menu--open' : ''}`}>
                 <p className="hdr__profile-email">{user?.email}</p>
 
+                <button type="button" className="hdr__menu-item" onClick={() => { setMenuOpen(false); navigate('/dashboard'); }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="9" rx="1" /><rect x="14" y="3" width="7" height="5" rx="1" /><rect x="14" y="12" width="7" height="9" rx="1" /><rect x="3" y="16" width="7" height="5" rx="1" /></svg>
+                  Dashboard
+                </button>
                 <button type="button" className="hdr__menu-item" onClick={() => { setMenuOpen(false); navigate('/favorites'); }}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14" strokeLinecap="round" /></svg>
                   My List

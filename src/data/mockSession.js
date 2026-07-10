@@ -37,9 +37,14 @@ export async function mockRegister({ email, password, password_confirmation }) {
     throw { status: 'error', message: 'بيانات غير صحيحة', errors: { email: ['This email is already registered.'] } };
   }
   const user = { id: users.length + 1, email };
-  users.push({ ...user, password });
+  users.push({ ...user, password, created_at: new Date().toISOString() });
   write(USERS_KEY, users);
   return mockLogin({ email, password });
+}
+
+export function mockUserCreatedAt(email) {
+  const users = read(USERS_KEY, []);
+  return users.find(u => u.email === email)?.created_at || null;
 }
 
 export async function mockLogin({ email, password }) {
