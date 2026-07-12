@@ -22,7 +22,7 @@ export default function SplashScreen() {
 
   useEffect(() => {
     if (!fadeOut) return;
-    const t = setTimeout(() => navigate('/welcome'), 500);
+    const t = setTimeout(() => navigate('/reveal'), 500);
     return () => clearTimeout(t);
   }, [fadeOut, navigate]);
 

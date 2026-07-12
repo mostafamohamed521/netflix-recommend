@@ -1,253 +1,378 @@
-<div align="center">
+# CineMatch — Full Frontend (React)
 
-# CineMatch
+A complete React frontend for the Netflix-style AI recommender, built
+directly against the Laravel + FastAPI API contract: auth, search, title
+detail with favorites/watched, personalized home (4 user stages), and
+watch history. Runs fully standalone on mock data out of the box, and
+switches to your real backend with one `.env` change.
 
-**An AI-powered movie & series recommender — full cinematic frontend, built in React.**
-
-Type a title you love, and CineMatch finds the 10 closest matches by genre, country, and rating.
-Every screen below is real, built, and wired up — from the splash screen to the personal dashboard.
-
-[![React](https://img.shields.io/badge/React-18.3-149ECA?logo=react&logoColor=white)](https://react.dev)
-[![Vite](https://img.shields.io/badge/Vite-5-B73BFE?logo=vite&logoColor=white)](https://vitejs.dev)
-[![React Router](https://img.shields.io/badge/React_Router-7-CA4245?logo=reactrouter&logoColor=white)](https://reactrouter.com)
-[![Status](https://img.shields.io/badge/status-in_development-e50914)]()
-
-</div>
-
----
-
-## Contents
-
-- [Quick start](#quick-start)
-- [What's built](#whats-built)
-- [Connecting a real backend](#connecting-a-real-backend)
-- [Design system](#design-system)
-- [Project structure](#project-structure)
-- [Routes](#routes)
-- [API contract mapping](#api-contract-mapping)
-- [The 4 personalization stages](#the-4-personalization-stages)
-- [What's mocked, and how to swap it](#whats-mocked-and-how-to-swap-it)
-- [Notes for the backend team](#notes-for-the-backend-team)
-
----
-
-## Quick start
+## Run it
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open the URL Vite prints — usually **http://localhost:5173**.
+Open the URL Vite prints (usually http://localhost:5173). No backend
+required to try the whole app — see "Mock mode" below.
 
-No backend, no API keys, and no setup required to try the full app: everything runs on
-realistic mock data and a mock auth session out of the box (see
-[What's mocked](#whats-mocked-and-how-to-swap-it)).
-
----
-
-## What's built
-
-Every page below is fully implemented, animated, and wired together into one continuous flow.
-
-| # | Page | Route | Highlights |
-|---|------|-------|------------|
-| 1 | **Splash Screen** | `/` | Logo assembles from fog, glitch flash, real 0→100% loading bar, plays once per session |
-| 2 | **Auth Gate** | `/welcome` | Typed headline, drawn underline, Sign In / Create Account |
-| 3 | **Sign In / Create Account** | `/signin` | Curtain-wipe transition between modes, live validation, success checkmark |
-| 4 | **Forgot / Reset Password** | `/forgot-password`, `/reset-password` | Full recovery flow with inline success states |
-| 5 | **Welcome Back** | `/welcome-back` | Terminal-style status line, progress bar, name in red |
-| 6 | **Discover** (home) | `/home` | Typed "Find Your Next Obsession" hero, wide search, personalized rows |
-| 7 | **Recommend** | `/recommend` | Free-text AI assistant — parses mood/genre/ending from a real sentence |
-| 8 | **Trending** | `/trending` | 10→1 countdown intro, region tabs, Top 10, Rising Fast, weekly chart |
-| 9 | **My List** | `/favorites` | Shelf-in animation, dynamic ambient lighting per genre, live collection stats |
-| 10 | **Movie Details** | `/title/:title` | Full-screen parallax hero, AI match ring, cast, trailer, gallery, reviews |
-| 11 | **Dashboard** | `/dashboard` | Cinema DNA chart, real achievement unlocks, watch timeline |
-| — | **Watch History** | `/history` | Bonus page — a straightforward watched-titles list |
-| — | **Search Results** | `/search?q=` | Full-catalog search results grid |
-
-Sign out from the avatar menu, or let a session expire — either way you're routed back to
-the Auth Gate cleanly, no broken screens.
-
----
-
-## Connecting a real backend
+## Connect to your real backend
 
 Copy `.env.example` to `.env` and set:
 
-```env
+```
 VITE_API_BASE_URL=http://localhost/api
 ```
 
-- **Empty** → mock mode. Every file in `src/api/` falls back to local mock data and
-  `localStorage`-backed sessions. This is the default.
-- **Set** → every request routes through `src/api/client.js`, an axios instance that already:
-  - attaches `Authorization: Bearer {token}` automatically once logged in
-  - matches your Laravel API Contract's endpoints, methods, and response shapes exactly
-    (see the [mapping table](#api-contract-mapping))
-  - fires a global `auth:unauthorized` event on any `401`, which signs the user out and
-    redirects them — handled centrally in `App.jsx`
+Every file in `src/api/` checks this at runtime. Empty → mock mode
+(everything works locally, no server). Set → every request goes through
+`src/api/client.js`, which is already wired to your contract:
 
-No component code changes when you flip this switch — the mock/real branch lives entirely
-inside each `src/api/*.js` file.
+- `Authorization: Bearer {token}` header attached automatically once
+  logged in (see the axios interceptor in `client.js`)
+- Every endpoint, method, and response shape matches your API Contract
+  doc exactly (see the mapping table below)
 
----
+## Real movie posters (TMDB)
 
-## Design system
+Your dataset (title/genres/rating/country/release_year/director) has no
+poster field, so posters are fetched client-side from **TMDB**, the
+official free movie database API — this is exactly what it's for, not
+scraping. Get a free key in ~2 minutes:
 
-CineMatch deliberately uses **no photographs anywhere** — no poster API, no stock imagery.
-Every "poster," backdrop, and avatar is a color gradient generated from the title's genre
-(`src/utils/palette.js`), so the whole app stays fast, consistent, and license-free while
-still looking fully populated. Hovering a card in My List even tints the page's ambient
-background glow to match — the closest thing to "extracting colors from a poster," without
-a single image request.
+1. https://www.themoviedb.org/settings/api → request an API key (instant, free)
+2. Add it to `.env`: `VITE_TMDB_API_KEY=your_key_here`
 
-| Token | Value |
-|---|---|
-| Background | `#141414` |
-| Card | `#181818` |
-| Primary (red) | `#E50914` |
-| Hover (red) | `#F6121D` |
-| Text | `#FFFFFF` |
-| Secondary text | `#B3B3B3` |
-| Display font | Bebas Neue |
-| Body font | Inter |
+Without a key, every poster gracefully falls back to genre-themed
+placeholder photography (`src/api/tmdb.js` → `fallbackPoster()`), so the
+app still looks right before you add one.
 
-No emoji anywhere in the UI — every icon, badge, and marker is an inline SVG.
+## New: AI-interactive Home hero (proof of concept)
 
----
+`src/components/AiHero.jsx` replaces the old static hero with the
+`react-three-fiber` / Framer Motion concept discussed: a mouse-reactive
+3D particle sphere (red/purple/cyan blend, one draw call), a typed
+"What do you want to watch today?" headline, and a glassmorphic search
+panel with a scan-line sweep on focus and autocomplete results that fly
+in (opacity + scale + rotateX + blur) via Framer Motion.
+
+On a fresh login, the hero plays a short intro first: black screen →
+logo emerges from blur → brief glitch → camera zooms out to reveal the
+sphere and search. Clicking "Home" again later skips straight to the
+final state (`skipIntro` prop) so it doesn't replay every visit.
+
+**Be aware of the cost**: Three.js pulls in ~900KB (gzipped ~256KB) on
+its own. It's lazy-loaded (`React.lazy` + `Suspense` in `HomePage.jsx`)
+so it doesn't block the rest of the app, and fetches only when someone
+reaches Home — but it's still meaningfully heavier than the rest of the
+app combined. Test on the actual hardware you'll present on before
+committing further effort to Three.js elsewhere (Similar Movies
+carousel, dynamic poster-color extraction, etc. from the fuller brief);
+if it stutters, dial back the particle count in `ParticleSphere.jsx`
+(`COUNT` constant) or drop Three.js for a 2D canvas approximation.
+
+## New: Splash Screen + Authentication Gate
+
+Two new pages ahead of Sign In, matching the full-experience brief:
+
+- **`SplashScreen.jsx`** (`/`) — black screen → quick red flash → cinema-reel
+  mark scales in from fog → "WELCOME TO" types in letter by letter →
+  "CINEMATCH" rises letter by letter with a brief glow → tagline fades up →
+  a 0→100% loading bar (with a small logo pulse on each tick) → fade to
+  black → auto-continues to `/welcome`. Runs once per page load, ~3.5s.
+- **`AuthGatePage.jsx`** (`/welcome`) — a blurred, desaturated collage of
+  cinema-themed placeholder photography behind an 85% black overlay. The
+  headline types out letter by letter, then a red underline draws under
+  it, followed by the description and the two actions (Sign In / Create
+  Account) staggering in. Only plays that entrance once per browser
+  session (`sessionStorage`) — coming back later shows it instantly.
+  Both buttons hand off to `/signin` with the right tab pre-selected via
+  `location.state.mode`.
+
+## Roadmap — the rest of the brief
+
+Since the note above, **Welcome Back** is now built too (`WelcomeBackPage.jsx`,
+`/welcome-back`): the logo docks up top, "WELCOME BACK" + your name in
+red, a terminal-style status line cycling through Initializing → Loading
+→ Analyzing → Preparing → Ready, a progress bar, then Continue into
+Discover. Login/Register also got the backdrop poster, OR + social
+buttons, and success-checkmark treatment the brief describes.
+
+**One real conflict worth knowing about:** the brief adds a `Username`
+field to Register with live availability checking. Your API Contract
+(BR11) explicitly says registration is email + password only — so
+Register here still sends just those two fields. Adding a username means
+updating the Laravel contract first; happy to wire the frontend field in
+once that's confirmed so it doesn't silently break against the real
+backend.
+
+Still queued, at this same level of detail: **Recommend / AI Assistant**
+(the standout differentiator in the brief — worth doing properly rather
+than rushed), **Trending**, a reworked **My List** (shelf animation +
+dynamic ambient lighting), a cinematic **Movie Details** page with
+dynamic poster-color theming, and a **Dashboard/Profile** with a
+"Cinema DNA" chart. Say which one to tackle next.
+
+No emoji anywhere in any of this — every icon is an inline SVG.
+
+## Latest adjustments
+
+- **Discover hero now matches the reference screenshot**: "Find Your Next
+  Obsession." types itself out with "Obsession." in red, the underline
+  draws, then "8,790 titles. One search. Infinite recommendations."
+  types out beneath it, then the wide search bar fades in.
+- **Dimmed poster-grid backdrop** behind the whole Discover page
+  (`components/DiscoverBackdrop.jsx`) — a faint, grayscale tile grid with
+  a dark overlay on top, same idea as the screenshot. It uses CineMatch's
+  own catalog titles rather than the real show names in the reference
+  image, to keep the effect without borrowing anyone's actual IP.
+- Header restructured into 3 zones: cinema-reel icon + CINEMATCH on the
+  left, nav centered (Discover, Recommend, Trending, My List), search +
+  avatar on the right (`components/Header.jsx`).
+- Auth pages backdrop reverted to the simple no-photography version.
+- Added minimal placeholder pages for `/recommend` and `/trending`.
+
+## Latest adjustments (2)
+
+- **No images anywhere in the app.** TMDB posters/backdrops are gone
+  entirely — `TitleCard`, `TitleDetailPage`, and the Auth Gate's poster
+  collage all now use pure color gradients derived from genre
+  (`utils/palette.js`) instead of photos. `api/tmdb.js` is no longer
+  called by anything live (only the still-unused `AiHero`/
+  `GlassSearchPanel` proof-of-concept from earlier references it — those
+  aren't rendered anywhere right now).
+- **Discover hero is now full-screen** (`min-height: 100vh`), black
+  background with a red radial gradient, content vertically centered.
+
+## Recommend page — full build
+
+`pages/RecommendPage.jsx` replaces the earlier placeholder with the real
+conversational AI assistant flow from the brief:
+
+- A large glass-effect textarea (not a plain input) for a free-text
+  request, a decorative voice-search button, and suggestion chips that
+  scale and turn red on hover.
+- Pressing **Generate Recommendations** (or Enter) runs a loading
+  sequence that cycles through "Analyzing your request...", "Searching
+  movie database...", "Ranking best matches...", "Generating
+  recommendations..." every 500ms with a red spinner.
+- An **"AI Understood Your Request"** box parses the free-text query
+  (`api/aiRecommend.js` → `analyzeRequest()`) into Genre / Mood / Ending /
+  Release Preference — genuinely reads the words in the request (e.g.
+  "without horror" excludes horror titles, "after 2015" sets a Modern
+  Movies preference) rather than being static.
+- Result cards fly in one after another (opacity → scale → blur →
+  normal), each with an AI Match % badge, a "Recommended because"
+  checklist, and Watch Trailer / Save / Details actions. A "no exact
+  match" state and a "Recent AI Searches" history row (persisted per
+  account) round it out.
+- Posters here are the same genre-based color gradients as the rest of
+  the app — no images, per the no-photography direction.
+
+This is a mock NLP layer, obviously — swap `analyzeRequest()` for a real
+call to your FastAPI/LLM endpoint once it exists; the shape it returns
+(`understood` + `results`) is what the UI already expects.
+
+## Trending page — full build
+
+`pages/TrendingPage.jsx` replaces the placeholder with the brief's "Top
+10 countdown" experience:
+
+- A rapid on-load countdown overlay (10 → 1) before the page reveals,
+  the "wow" touch called out in the brief.
+- A hero banner for the #1 title (genre-color background, no photos)
+  with an "#1 WORLDWIDE" badge, and glass stat cards for IMDb / Netflix
+  Score / AI Score (`api/trending.js` fabricates stable per-title
+  numbers — there's no real trending signal yet).
+- Region tabs (Global / USA / Egypt / Korea / Japan) that reshuffle the
+  ranking, a search box scoped to the trending list, a Top 10 list with
+  large rank numerals, "Trending Movies" / "Trending TV Shows" rows
+  (reusing `TitleCard`), a "Rising Fast" section, and a simple Weekly
+  Chart showing last week's rank vs. this week's.
+- `api/trending.js` is clearly a mock — wire it to a real trending
+  endpoint (or compute it from watch/favorite counts) whenever that
+  exists; every consumer already expects the same shape.
+
+## My List page — full build
+
+`pages/MyListPage.jsx` (still served at `/favorites`) replaces the plain
+list with the brief's "personal cinema collection":
+
+- Hero with a live saved-title count badge, search-inside-collection,
+  a sort dropdown (Newest Added / Oldest / Alphabetical / Year), and
+  All / Movies / TV Shows tabs.
+- A 5-column grid where cards "shelve in" staggered on load, each with a
+  Saved badge and four hover actions (Play, Details, Rate, Remove) via
+  the new `components/MyListCard.jsx`. Remove dissolves the card
+  (scale + blur + fade) instead of just vanishing.
+- **Dynamic ambient lighting**: hovering a card tints the whole page's
+  background glow to that title's genre color
+  (`utils/palette.js` → `genreAccent()`) — the closest thing to the
+  brief's "extract colors from the poster" idea while staying entirely
+  photo-free.
+- A "Recently Added" row, four count-up Collection Stats (Movies Saved,
+  TV Shows, Favorite Genre, Hours of Content — all computed from your
+  actual saved titles, not fake numbers), and a proper empty state with
+  an "Explore Movies" link back to Discover.
+
+## Movie Details page — the cinematic upgrade
+
+`pages/TitleDetailPage.jsx` is now the flagship page the brief describes
+("the most premium page in the whole project"):
+
+- Full-screen (100vh) hero with a subtle scroll parallax, IMDb / Rotten
+  Tomatoes / AI Match badges, genre capsules, and Watch Trailer / Add to
+  My List / Share / Mark as Watched actions — Favorite and Watched still
+  work exactly as before, this is purely a visual upgrade.
+- Overview, a Movie Information glass-card grid (release year, runtime,
+  language, country, director, studio), an animated AI Match ring with
+  "Why We Recommend It" reasons, a Cast section, a Trailer placeholder,
+  a 4-tile Screenshot gallery, "You May Also Like" (the existing
+  recommendations row), Reviews, and an AI Summary card.
+- All of it — cast avatars, trailer/gallery tiles, review avatars, even
+  the whole page's accent color — comes from `utils/enrich.js` and
+  `utils/palette.js`'s genre-based color system, so it's fully populated
+  and on-brand without a single photo or a real content API. Everything
+  in `enrich.js` is seeded from the title so it's stable across reloads;
+  swap each function for a real API call once your backend has cast,
+  reviews, runtime, etc.
+
+## What's new in this pass
+
+- **All auth pages, not just login/register**: Forgot Password
+  (`ForgotPasswordPage.jsx`, with an inline "check your email" success
+  state) and Reset Password (`ResetPasswordPage.jsx`, reads `?token=`
+  from the URL). Both use placeholder API calls in `api/auth.js`
+  (`requestPasswordReset`, `resetPassword`) since these aren't in the
+  current contract yet — clearly commented so it's obvious what to
+  coordinate with the backend team.
+- **Simplified auth background** (`components/AuthBackground.jsx`) — no
+  photography at all now, just a dark base with two soft breathing red
+  glows and fine grain. Calmer, and puts all the focus on the form.
+- **Welcome → navbar morph on first arrival at Home**: right after
+  login/register, a full-screen "Welcome, name" plays for a beat, then
+  visually flies up and shrinks into the header logo's exact position
+  while the real page fades in underneath — instead of a separate
+  "Continue" screen. Only plays once per login (`HomePage.jsx`, driven by
+  `location.state.justAuthenticated` from `AuthPage`'s `navigate()`).
+- **Hero search section on Home**: animated "Find Your Next Obsession"
+  headline with a drawn-on underline, a tagline, and the big centered
+  search bar with a typewriter placeholder — sits above the personalized
+  rows so the core product (search → 10 closest matches) is still the
+  first thing people see, not buried under browsing.
+- **Card polish**: a one-time shimmer sweep across each poster as it
+  appears, and match-percentage counts up from 0 instead of just
+  appearing, plus a red glow ring on hover.
+
+## What's new in this pass (previous)
+
+- **Command-palette search** — click the search pill or press `/` anywhere
+  to open a centered overlay with live results, arrow-key navigation, and
+  Enter to jump straight to a title (`components/Header.jsx`).
+- **Global toast system** (`context/ToastContext.jsx`) — every
+  favorite/watched/remove action gives consistent feedback app-wide,
+  instead of each page rolling its own.
+- **Automatic session handling** — a 401 from any API call fires
+  `auth:unauthorized`; `App.jsx` catches it, signs the person out, shows a
+  toast, and returns them to Sign In. No more silently-broken pages.
+- **Skeleton loading states** everywhere (Home rows, Search grid, Title
+  detail hero, Favorites/History rows) instead of plain "Loading…" text.
+- **Staggered entrance + exit animation** on every card/row/list item, a
+  route-change progress bar, and richer poster hover (lift + zoom).
+- Mobile hamburger menu for the navbar.
 
 ## Project structure
 
 ```
 src/
-├── api/                    # one file per feature area — mock/real switch lives inside each
-│   ├── client.js             axios instance, Bearer token, 401 handling
-│   ├── auth.js                register / login / logout / password reset
-│   ├── titles.js              search / title detail / recommendations
+├── api/                     # one file per contract group, mock ↔ real switch inside each
+│   ├── client.js             # axios instance + auto Bearer token header
+│   ├── auth.js                # register / login / logout / me
+│   ├── titles.js              # search / title detail / recommendations
 │   ├── favorites.js
 │   ├── history.js
-│   ├── home.js                 the 4-stage personalized Discover feed
-│   ├── trending.js             region-based trending rankings (mock)
-│   ├── aiRecommend.js          free-text request parser for /recommend (mock)
-│   └── tmdb.js                 unused — kept for AiHero, see below
-│
+│   ├── home.js                 # the 4-stage personalized home logic
+│   └── tmdb.js                  # real poster lookup + themed fallback
 ├── context/
-│   ├── AuthContext.jsx        user + token state, login/register/logout
-│   ├── ToastContext.jsx        app-wide toast notifications
-│   └── ProtectedRoute.jsx      redirects to the Auth Gate if signed out
-│
+│   ├── AuthContext.jsx        # user + token state, login/register/logout
+│   └── ProtectedRoute.jsx      # redirects to "/" if not authenticated
 ├── data/
-│   ├── catalog.js              mock title catalog, shaped like the real API fields
-│   └── mockSession.js           mock users/favorites/history/AI search history
-│
-├── utils/
-│   ├── palette.js               genre → color gradient (the whole no-images system)
-│   └── enrich.js                 deterministic cast/reviews/summary for Movie Details
-│
-├── components/                 shared building blocks (Header, TitleCard, form fields...)
-│
-├── pages/                      one file (+ matching .css) per route
-│
-├── App.jsx                     routes + global 401 handling
-└── main.jsx                     BrowserRouter + AuthProvider + ToastProvider
+│   ├── catalog.js              # mock catalog, shaped exactly like your API fields
+│   └── mockSession.js           # mock users/favorites/history (localStorage-backed)
+├── components/
+│   ├── Header.jsx               # nav + live search + profile menu (used on every page after auth)
+│   ├── TitleCard.jsx             # poster card: TMDB image, match %, reason, rank
+│   ├── FormInput.jsx, LoginForm.jsx, RegisterForm.jsx, PasswordStrength.jsx
+│   ├── PosterWall.jsx, WelcomeScreen.jsx
+├── pages/
+│   ├── AuthPage.jsx + AuthPage.css        # sign in / create account, curtain wipe, welcome moment
+│   ├── HomePage.jsx                        # GET /home — stage-adaptive sections
+│   ├── SearchResultsPage.jsx               # GET /search
+│   ├── TitleDetailPage.jsx + .css          # GET /titles/:title + recommendations, favorite/watched actions
+│   ├── FavoritesPage.jsx                   # GET /favorites + remove
+│   ├── HistoryPage.jsx                     # GET /history + remove
+│   └── BrowsePages.css, ListPages.css       # shared styles
+├── App.jsx                    # routes
+└── main.jsx                    # BrowserRouter + AuthProvider
 ```
-
-> **`AiHero.jsx` / `ParticleSphere.jsx` / `GlassSearchPanel.jsx`** — an earlier
-> React-Three-Fiber proof of concept (a mouse-reactive 3D particle sphere). Not wired into
-> any route right now, kept around as a strong candidate for a future `/recommend` upgrade.
-> Note it still references `api/tmdb.js` for images if it's ever reactivated.
-
----
 
 ## Routes
 
 | Path | Page | Auth |
 |---|---|---|
-| `/` | Splash screen | Public |
-| `/welcome` | Auth Gate | Public |
+| `/` | Splash screen (plays once, then auto-continues) | Public |
+| `/welcome` | Authentication Gate (poster collage, Sign In / Create Account) | Public |
 | `/signin` | Sign in / Create account | Public |
 | `/forgot-password` | Forgot password | Public |
 | `/reset-password?token=` | Set new password | Public |
-| `/welcome-back` | Post-login welcome | Protected |
-| `/home` | Discover | Protected |
-| `/recommend` | AI Recommend assistant | Protected |
-| `/trending` | Trending | Protected |
+| `/home` | Personalized home (4 stages) + AI hero search | Protected |
 | `/search?q=` | Search results | Protected |
-| `/title/:title` | Movie Details | Protected |
+| `/title/:title` | Detail + recommendations + favorite/watched | Protected |
 | `/favorites` | My List | Protected |
-| `/dashboard` | Dashboard / Profile | Protected |
 | `/history` | Watch history | Protected |
 
-Protected routes redirect to `/welcome` if there's no active session (`ProtectedRoute.jsx`).
-
----
+Every protected route redirects to `/` if there's no logged-in user
+(`ProtectedRoute.jsx`). Your contract technically allows guest browsing
+via Optional Auth — if you want that here too, just remove the
+`<ProtectedRoute>` wrapper around `/search` and `/title/:title` in
+`App.jsx`; those pages already handle a logged-out user gracefully
+(`is_favorite`/`is_watched` render as unavailable, `reason` stays null).
 
 ## API contract mapping
 
 | Contract endpoint | Frontend call |
 |---|---|
-| `POST /auth/register` *(email + password only)* | `AuthContext.jsx` → `register()` |
+| `POST /auth/register` (BR11: email + password only) | `context/AuthContext.jsx` → `register()` |
 | `POST /auth/login` | `AuthContext.jsx` → `login()` |
 | `GET /search?q=&limit=` | `api/titles.js` → `search()` |
 | `GET /titles/{title}` | `api/titles.js` → `getTitleDetail()` |
 | `GET /titles/{title}/recommendations?n=` | `api/titles.js` → `getRecommendations()` |
-| `POST /favorites` *(toggle)* | `api/favorites.js` → `toggleFavorite()` |
+| `POST /favorites` (toggle) | `api/favorites.js` → `toggleFavorite()` |
 | `DELETE /favorites/{title}` | `api/favorites.js` → `removeFavorite()` |
 | `POST /history` | `api/history.js` → `markWatched()` |
 | `DELETE /history/{title}` | `api/history.js` → `removeHistoryEntry()` |
-| `GET /home` *(stage + sections)* | `api/home.js` → `getHome()` |
+| `GET /home` (stage + sections) | `api/home.js` → `getHome()` |
 
-Favorite/mark-as-watched calls always send full metadata (`title, type, genres,
-release_year`) so the backend never has to re-query the ML service for it. `is_favorite` /
-`is_watched` render as *unavailable* for guests, not `false` — the frontend never claims
-"not favorited" for someone who isn't signed in.
+## The 4 stages (from your diagram)
 
----
+`HomePage.jsx` reads `stage` from the `/home` response and swaps the
+eyebrow/heading copy accordingly (`STAGE_COPY` at the top of the file):
+**stranger** (guest → Popular section only), **explorer** (new/registered,
+few signals), **regular** (has a taste profile → Recommended For You +
+Because You Watched + Based on Favorites), **loyal** (same sections, tone
+shifts to "we know you well"). The mock `api/home.js` derives a stage
+from favorites+history count so you can see all four just by adding/
+removing favorites — swap that block for the real backend's `stage` once
+it's live.
 
-## The 4 personalization stages
+## Notes
 
-`Discover` reads a `stage` from the `/home` response and adjusts its copy and sections:
-
-| Stage | Who | What they see |
-|---|---|---|
-| **Stranger** | Guest | A single "Popular" section |
-| **Explorer** | New / few signals | Popular, with an encouragement to save favorites |
-| **Regular** | Has a taste profile | Recommended For You, Because You Watched, Based on Favorites |
-| **Loyal** | Long history | Same sections, warmer "we know you well" tone |
-
-The mock `api/home.js` derives a stage from your real favorites + history count, so you can
-see all four just by adding or removing titles. Swap that block for the real backend's
-`stage` field once it's live — the frontend logic doesn't change.
-
----
-
-## What's mocked, and how to swap it
-
-Everything below runs on deterministic, hash-seeded mock data so numbers stay stable across
-reloads instead of jumping around — genuinely fabricated, but not random. Each is a small,
-clearly-commented function ready to be replaced with a real API call:
-
-| Area | File | Function |
-|---|---|---|
-| Trending rankings / stats | `api/trending.js` | `getTrending()` |
-| Free-text AI request parsing | `api/aiRecommend.js` | `analyzeRequest()` |
-| Cast, reviews, AI summary, runtime | `utils/enrich.js` | (several) |
-| Password reset endpoints | `api/auth.js` | `requestPasswordReset()`, `resetPassword()` — **not yet in your API Contract**, coordinate the route/shape with the backend team before wiring the real branch |
-
-Favorites, history, and Discover's personalization all use the *real* mock session in
-`data/mockSession.js` (backed by `localStorage`), so that data persists across reloads and
-genuinely drives the Dashboard, My List stats, and Cinema DNA — none of that is fake.
-
----
-
-## Notes for the backend team
-
-- **Register is email + password only**, matching BR11 in the API Contract. An earlier design
-  pass explored adding a `username` field with live availability checking — that's *not*
-  wired in, since it would silently fail against the real contract. Flag it if that's wanted,
-  and update the contract first.
-- Password rule on the frontend is 8+ characters — a reasonable default, adjust in
-  `components/RegisterForm.jsx` to match whatever Laravel actually enforces.
-- `requestPasswordReset` / `resetPassword` in `api/auth.js` are mocked and clearly marked —
-  there's no forgot-password endpoint in the current contract yet.
+- Favorite/mark-as-watched calls send full metadata
+  (`title, type, genres, release_year`), matching BR6/BR7 — the backend
+  never needs to re-query the ML service for it.
+- `is_favorite` / `is_watched` render as unavailable for guests (`null`
+  from the contract), not `false` — `TitleDetailPage.jsx` treats them as
+  falsy for display but never claims "not favorited" for a guest.
+- Password rule here is 8+ characters (a reasonable frontend default);
+  adjust in `RegisterForm.jsx` to match whatever validation Laravel
+  actually enforces.

@@ -37,14 +37,9 @@ export async function mockRegister({ email, password, password_confirmation }) {
     throw { status: 'error', message: 'بيانات غير صحيحة', errors: { email: ['This email is already registered.'] } };
   }
   const user = { id: users.length + 1, email };
-  users.push({ ...user, password, created_at: new Date().toISOString() });
+  users.push({ ...user, password });
   write(USERS_KEY, users);
   return mockLogin({ email, password });
-}
-
-export function mockUserCreatedAt(email) {
-  const users = read(USERS_KEY, []);
-  return users.find(u => u.email === email)?.created_at || null;
 }
 
 export async function mockLogin({ email, password }) {
@@ -57,7 +52,7 @@ export async function mockLogin({ email, password }) {
   return {
     status: 'success',
     data: {
-      user: { id: found.id, email: found.email },
+      user: { id: found.id, email: found.email, stage: 'stranger' },
       token: fakeToken(email),
       token_type: 'bearer',
       expires_in: 3600,
@@ -155,4 +150,13 @@ export function mockSaveAiSearch(email, query) {
   all[email] = list.slice(0, 8);
   write(AI_SEARCH_KEY, all);
   return all[email];
+}
+
+// تاريخ تسجيل وهمي بس ثابت لكل إيميل (مش بيتغير بين الفتحات) - مفيش
+// endpoint حقيقي بيرجع "تاريخ إنشاء الحساب" في الكونتراكت، فده للعرض
+// التجريبي بس (وضع USE_MOCK)
+export function mockUserCreatedAt(email) {
+  const users = read(USERS_KEY, []);
+  const found = users.find(u => u.email === email);
+  return found?.createdAt || new Date().toISOString();
 }

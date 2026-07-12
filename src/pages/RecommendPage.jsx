@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { analyzeRequest } from '../api/aiRecommend';
+import * as titlesApi from '../api/titles';
 import { mockAiSearchHistory, mockSaveAiSearch } from '../data/mockSession';
 import { genreGradient } from '../utils/palette';
 import './RecommendPage.css';
@@ -31,8 +33,9 @@ const STAGE = {
 };
 
 export default function RecommendPage() {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { showToast } = useToast();
+  const navigate = useNavigate();
 
   const [query, setQuery] = useState('');
   const [stage, setStage] = useState(STAGE.IDLE);
@@ -43,8 +46,13 @@ export default function RecommendPage() {
   const textareaRef = useRef(null);
 
   useEffect(() => {
+    // الزائر (من غير تسجيل دخول) مش هيكون عنده سجل بحث محفوظ - سيبه فاضي
+    if (!user?.email) {
+      setRecent([]);
+      return;
+    }
     setRecent(mockAiSearchHistory(user.email));
-  }, [user.email]);
+  }, [user?.email]);
 
   useEffect(() => {
     if (stage !== STAGE.LOADING) return;
@@ -66,7 +74,7 @@ export default function RecommendPage() {
       setUnderstood(understood);
       setResults(results);
       setStage(results.length ? STAGE.RESULTS : STAGE.EMPTY);
-      setRecent(mockSaveAiSearch(user.email, q));
+      if (user?.email) setRecent(mockSaveAiSearch(user.email, q));
     }, LOADING_LINES.length * 500 + 300);
   }
 
@@ -222,15 +230,12 @@ export default function RecommendPage() {
                     </ul>
 
                     <div className="rc-card__actions">
-                      <button type="button" className="rc-btn rc-btn--play">
+                      <button type="button" className="rc-btn rc-btn--play" onClick={() => navigate(`/title/${encodeURIComponent(item.title)}`)}>
                         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
-                        Watch Trailer
+                        View Details
                       </button>
                       <button type="button" className="rc-btn rc-btn--outline" title="Save">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14" strokeLinecap="round" /></svg>
-                      </button>
-                      <button type="button" className="rc-btn rc-btn--outline" title="Details">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" strokeLinecap="round" /></svg>
                       </button>
                     </div>
                   </div>
